@@ -100,7 +100,7 @@ pre
      
 
 post
-	produitsPopulaires! = set of (Produit){},
+	produitsPopulaires! = stock.dom,
 	produitsNonPopulaires! = set of (Produit){},
 	satisfaction! = map of (Produit -> Niveau){},
 	fermeture! = false,
@@ -121,7 +121,8 @@ schema !achatProduitExistant(p:Produit,q:Quantite)
 
 pre 
   p in stock.dom,
-  stock[p]+q <= capacite
+  stock[p]+q <= capacite,
+  fermeture = false
 
 post 
    stock! = (stock.remove(p)).append(p -> stock[p]+q),
@@ -145,7 +146,8 @@ pre
   p in marcheCible,
   q <= capacite, 
   s <= capacite,
-  s <= q
+  s <= q,
+  fermeture = false
 
 post
    stock! = stock.append(p -> q),
@@ -165,7 +167,8 @@ schema !venteProduit(p:Produit,q:Quantite)
 pre 
   p in stock.dom,
   q <= capacite,
-  seuil[p] <= stock[p]-q
+  seuil[p] <= stock[p]-q,
+  fermeture = false
 
 post 
    stock! = (stock.remove(p)).append(p -> (stock[p]-q));     
@@ -182,8 +185,10 @@ schema !venteProduitAchat(p:Produit,q:Quantite)
     
 pre 
   p in stock.dom,
+  p in produitsPopulaires,
   stock[p]-q < seuil[p],
-  q <= capacite-seuil[p]
+  q <= capacite-seuil[p],
+  fermeture = false
  
 
 post 
@@ -195,6 +200,8 @@ schema produitsPopulaires(pp!: set of (Produit),q:Quantite)
  
 
 // Il faut récupérer les produits dont le renouvellement est supérieur ou égal à q
+pre
+	pp <<= stock.dom
 
 
 post 
