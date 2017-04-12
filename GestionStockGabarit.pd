@@ -25,9 +25,9 @@ class Niveau ^= nat;   // entre 1 et 10.
 //  La capacité de stockage est une constante liée aux installations de l'entreprise. 
 
 const 
- capacite : nat ^= 1000;	// Capacité maximal d'un produit
- satisfactionSeuil ^= 6; 	// Niveau de satifaction minimal
- renouvellementSeuil ^= 50;	// En dessous de ce seuil, la quantité est considérée comme faible
+ capacite : nat ^= 1000,	// Capacité maximal d'un produit
+ satisfactionSeuil : nat ^= 6, 	// Niveau de satifaction minimal
+ renouvellementSeuil : nat ^= 50;	// En dessous de ce seuil, la quantité est considérée comme faible
 
 
 
@@ -58,8 +58,8 @@ var
   seuil          : map of (Produit -> Quantite),
   renouvellement : map of (Produit -> nat),
   
-  produitPopulaires 		: set of (Produit),
-  produitsNonPopuplaires	: set of (Produit),
+  produitsPopulaires 		: set of (Produit),
+  produitsNonPopulaires	: set of (Produit),
   satisfaction				: map of (Produit -> Niveau), 
   fermeture					: bool;
   
@@ -89,7 +89,7 @@ interface
 // Puisqu'on passe des paramètres lors de l'initialisation. Il faut s'assurer 
 // qu'ils sont conformes aux invariants. 
 
-build{!stock: map of (Produit -> Quantite), !marcheCible :set of (Produit), !seuil:map of (Produit -> Quantite)}
+build{!stock : map of (Produit -> Quantite), !marcheCible : set of (Produit), !seuil : map of (Produit -> Quantite)}
 
 pre
     stock.dom <<= marcheCible,
@@ -100,8 +100,11 @@ pre
      
 
 post
-
-renouvellement!  =  map of (Produit -> nat) {for p ::stock.dom yield pair of (Produit, nat){p,0}}; 
+	produitsPopulaires! = set of (Produit){},
+	produitsNonPopulaires! = set of (Produit){},
+	satisfaction! = map of (Produit -> Niveau){},
+	fermeture! = false,
+	renouvellement!  =  map of (Produit -> nat) {for p ::stock.dom yield pair of (Produit, nat){p,0}}; 
 
   
 
