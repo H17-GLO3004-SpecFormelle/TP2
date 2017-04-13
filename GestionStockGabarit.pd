@@ -179,7 +179,7 @@ schema !venteProduitAchat(p:Produit,q:Quantite)
 
 // Il faut s'assurer que le produit fait partie du stock  
 // Pour pouvoir vendre une quantité q  qui fait baisser le stock en deçà du seuil
-// Il faut s'assurer que la quantité q vendue soit inférieure ou éagle à capacité mois le seuil minimale
+// Il faut s'assurer que la quantité q vendue soit inférieure ou éagle à capacité moins le seuil minimal
 // Il faut commencer par acheter le maximum possible (capacité - stock[p]) puis vendre q. 
 
     
@@ -192,7 +192,9 @@ pre
  
 
 post 
-    !achatProduitExistant(p,(capacite-stock[p])) then !venteProduit(p,q);
+    !achatProduitExistant(p,(capacite-stock[p])) then !venteProduit(p,q)
+	assert
+		stock' = stock;
     
 
     
@@ -205,8 +207,26 @@ pre
 
 
 post 
-     pp! = (those p::renouvellement.dom :- renouvellement[p] >= q)   
+     pp! = (those p::renouvellement.dom :- renouvellement[p] >= q);  
+	 
+	 
+schema !miseAJourSeuils(p : map of (Produit -> Quantite))
+
+//P représente une association entre un produit et sa quantité minimale de stockage
+//On associe à un produit le seuil fourni (Quantite) ou bien zéro si le produit n'est pas populaire
+//Et si son niveau de satisfaction est inférieur au seuil de satisfaction
    
+pre
+	p.dom <<= stock.dom
+	
+post
+	forall produit::stock.dom :-(
+		[renouvellement[produit] < renouvellementSeuil
+		 & satisfaction[produit] < satisfactionSeuil]: stock[produit] = 0,
+		[renouvellement[produit] >= renouvellementSeuil]: stock[produit] > 0,
+		[satisfaction[produit] >= satisfactionSeuil]: stock[produit] > 0),
+	stock! = stock;
+	
 
      
 end;	
