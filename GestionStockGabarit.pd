@@ -24,9 +24,9 @@ class Niveau ^= nat;   // entre 1 et 10.
 //-- Constantes ----------------------------------------------------------
 //  La capacité de stockage est une constante liée aux installations de l'entreprise. 
 const 
- capacite : nat ^= 1000,	// Capacité maximal d'un produit
- satisfactionSeuil : nat ^= 6, 	// Niveau de satifaction minimal
- renouvellementSeuil : nat ^= 50;	// En dessous de ce seuil, la quantité est considérée comme faible
+	capacite : nat ^= 1000,	// Capacité maximal d'un produit
+	satisfactionSeuil : nat ^= 6, 	// Niveau de satifaction minimal
+	renouvellementSeuil : nat ^= 50;	// En dessous de ce seuil, la quantité est considérée comme faible
 
 //------------------------------------------------------------------------
 // CLASSE Gestiontock
@@ -34,7 +34,6 @@ const
 // L'énoncé indique clairement plusieurs attributs et propriétés relatifs
 // à la gestion de  stock, il est donc normal d'y associer une classe.	
 //--------------------------------------------------------------------------
-
 class GestionStock ^= 
 abstract 
 	var 
@@ -44,25 +43,29 @@ abstract
 		marcheCible    : set of (Produit),
 		// Les seuils sont fournis comme une association (produit,seuil)
 		seuil          : map of (Produit -> Quantite),
+		//
 		renouvellement : map of (Produit -> nat),
-
+		// Ensemble des produits si son renouvellement excede ou egal a renouvellementSeuil
 		produitsPopulaires 			: set of (Produit),
+		// Ensemble des produits si son renouvellement est sous renouvelleSeuil
 		produitsNonPopulaires		: set of (Produit),
+		// Associe chaque produit a un niveaeu de satisfaction
 		satisfaction				: map of (Produit -> Niveau), 
+		// true si la ligne de produits va etre fermee par le gestionnaire
 		fermeture					: bool;
 	invariant
 		// Les produits en stock doivent faire partie du marche cibe. 
-		 stock.dom <<= marcheCible, 
-		 // Le domaine de seuil est le même que le domaine de stock, à chaque produit en stock on associe un seuil. 
-		 seuil.dom =  stock.dom,
-		 // Un renouvellement est associé à chacun des produits en stock.
-		 renouvellement.dom = stock.dom,
-		 // La quantité de chacun des produits ne doit pas dépasser la capacité de stockage fixée d'avance
-		 forall p::stock.dom :- stock[p] <= capacite,
-		 // Les seuils ne doivent pas être plus élevés que la capacité de stockage (déduction logique!)
-		 forall p::seuil.dom :-  seuil[p] <= capacite,
-		 // La quantité en stock de chaque produit doit être supérieur ou égal au seuil minimal associé au produit et inférieure ou égal à la capacité.
-		 forall p::stock.dom :- seuil[p]<= stock[p];
+		stock.dom <<= marcheCible, 
+		// Le domaine de seuil est le même que le domaine de stock, à chaque produit en stock on associe un seuil. 
+		seuil.dom =  stock.dom,
+		// Un renouvellement est associé à chacun des produits en stock.
+		renouvellement.dom = stock.dom,
+		// La quantité de chacun des produits ne doit pas dépasser la capacité de stockage fixée d'avance
+		forall p::stock.dom :- stock[p] <= capacite,
+		// Les seuils ne doivent pas être plus élevés que la capacité de stockage (déduction logique!)
+		forall p::seuil.dom :-  seuil[p] <= capacite,
+		// La quantité en stock de chaque produit doit être supérieur ou égal au seuil minimal associé au produit et inférieure ou égal à la capacité.
+		forall p::stock.dom :- seuil[p] <= stock[p];
 interface
 	// Puisqu'on passe des paramètres lors de l'initialisation. Il faut s'assurer qu'ils sont conformes aux invariants. 
 	build{	!stock 					: map of (Produit -> Quantite), 
@@ -85,7 +88,6 @@ interface
 		satisfaction = map of (Produit -> Niveau){},
 		fermeture = false,
 		renouvellement  =  map of (Produit -> nat) {for p ::stock.dom yield pair of (Produit, nat){p,0}}; 
-		
 
 // -----------------------------
 // achatProduitExistant
@@ -169,6 +171,17 @@ interface
 			pp <<= stock.dom
 		post 
 			 pp! = (those p::renouvellement.dom :- renouvellement[p] >= q);  
+	 
+// -----------------------------
+// miseAJourRenouvellement
+// 		Mise a jour de la popularite des produits selon le renouvellement.
+// -----------------------------
+	 schema !miseAJourRenouvellement(produits!: map of (Produit->Quantite))
+		pre
+			renouvellement.dom <<= produits.dom
+		post
+			produitsPopulaires! = (those p::renouvellement.dom :- produits[p] >= renouvellementSeuil),
+			produitsNonPopulaires! = (those p::renouvellement.dom :- produits[p] < renouvellementSeuil);
 	 
 // -----------------------------
 // miseAJourSeuils
