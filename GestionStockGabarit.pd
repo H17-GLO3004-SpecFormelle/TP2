@@ -7,6 +7,10 @@
 //  Gabarit - GLO-3004, spécification formelle et vérification, 
 //////////////////////////////////////////////////////////////////////////
 
+// Mathieu BOILY - 111 127 896
+// Marc-Antoire FORTIER - 111 130 529
+// Maxime LAVEGNE - 111 110 783
+
 //-- Types de base (abstraits) -------------------------------------------
 // L'énoncé n'indique aucune information concernant les attributs d'un
 //il est alors normal de les considérer comme des types abstraits "tag".
@@ -16,24 +20,13 @@ class Produit ^= tag;
 class Quantite ^= nat;
 class Niveau ^= nat;   // entre 1 et 10.
 
-
-
 // 
-
-
 //-- Constantes ----------------------------------------------------------
 //  La capacité de stockage est une constante liée aux installations de l'entreprise. 
-
 const 
  capacite : nat ^= 1000,	// Capacité maximal d'un produit
  satisfactionSeuil : nat ^= 6, 	// Niveau de satifaction minimal
  renouvellementSeuil : nat ^= 50;	// En dessous de ce seuil, la quantité est considérée comme faible
-
-
-
-
-
-
 
 //------------------------------------------------------------------------
 // CLASSE Gestiontock
