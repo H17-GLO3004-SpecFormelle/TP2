@@ -43,192 +43,158 @@ const
 //--------------------------------------------------------------------------
 
 class GestionStock ^= 
-
 abstract 
+	var 
+		// Le stock est une association (produit, quantite)
+		stock          : map of (Produit  -> Quantite),
+		// Le marcheCible est un ensemble de produits.
+		marcheCible    : set of (Produit),
+		// Les seuils sont fournis comme une association (produit,seuil)
+		seuil          : map of (Produit -> Quantite),
+		renouvellement : map of (Produit -> nat),
 
-var 
-
-// Le stock est une association (produit, quantite)
-// Le marcheCible est un ensemble de produits.
-// Les seuils sont fournis comme une association (produit,seuil)
-
-
-  stock          : map of (Produit  -> Quantite),
-  marcheCible    : set of (Produit),
-  seuil          : map of (Produit -> Quantite),
-  renouvellement : map of (Produit -> nat),
-  
-  produitsPopulaires 		: set of (Produit),
-  produitsNonPopulaires	: set of (Produit),
-  satisfaction				: map of (Produit -> Niveau), 
-  fermeture					: bool;
-  
-invariant
-
-// Les produits en stock doivent faire partie du marche cibe. 
-// Le domaine de seuil est le même que le domaine de stock,
-// à chaque produit en stock on associe un seuil. 
-// Un renouvellement est associé à chacun des produits en stock.
-// La quantité de chacun des produits ne doit pas dépasser la capacité de stockage fixée d'avance
-// Les seuils ne doivent pas être plus élevés que la capacité de stockage (déduction logique!)
-// La quantité en stock de chaque produit doit être supérieur ou égal au seuil minimal associé 
-// au produit et inférieure ou égal à la capacité.
-
-
-     stock.dom <<= marcheCible, 
-     seuil.dom =  stock.dom,
-     renouvellement.dom = stock.dom,
-     forall p::stock.dom :- stock[p] <= capacite,
-     forall p::seuil.dom :-  seuil[p] <= capacite,
-     forall p::stock.dom :- seuil[p]<= stock[p];
-  
-   
-  
+		produitsPopulaires 			: set of (Produit),
+		produitsNonPopulaires		: set of (Produit),
+		satisfaction				: map of (Produit -> Niveau), 
+		fermeture					: bool;
+	invariant
+		// Les produits en stock doivent faire partie du marche cibe. 
+		 stock.dom <<= marcheCible, 
+		 // Le domaine de seuil est le même que le domaine de stock, à chaque produit en stock on associe un seuil. 
+		 seuil.dom =  stock.dom,
+		 // Un renouvellement est associé à chacun des produits en stock.
+		 renouvellement.dom = stock.dom,
+		 // La quantité de chacun des produits ne doit pas dépasser la capacité de stockage fixée d'avance
+		 forall p::stock.dom :- stock[p] <= capacite,
+		 // Les seuils ne doivent pas être plus élevés que la capacité de stockage (déduction logique!)
+		 forall p::seuil.dom :-  seuil[p] <= capacite,
+		 // La quantité en stock de chaque produit doit être supérieur ou égal au seuil minimal associé au produit et inférieure ou égal à la capacité.
+		 forall p::stock.dom :- seuil[p]<= stock[p];
 interface
+	// Puisqu'on passe des paramètres lors de l'initialisation. Il faut s'assurer qu'ils sont conformes aux invariants. 
+	build{	!stock 					: map of (Produit -> Quantite), 
+			!marcheCible 			: set of (Produit), 
+			!seuil 					: map of (Produit -> Quantite),
+			!renouvellement			: map of (Produit -> Quantite),
+			!produitsPopulaires 	: set of (Produit),
+			!produitsNonPopulaires 	: set of (Produit), 
+			!satisfaction 			: map of (Produit -> Niveau), 
+			!fermeture 				: bool}
+	pre
+		stock.dom <<= marcheCible,
+		seuil.dom =  stock.dom,
+		forall p::stock.dom :- stock[p] <= capacite,
+		forall p::seuil.dom :-  seuil[p] <= capacite,
+		forall p::stock.dom :-  seuil[p] <= stock[p],
+		
+		produitsPopulaires = stock.dom,
+		produitsNonPopulaires = set of (Produit){},
+		satisfaction = map of (Produit -> Niveau){},
+		fermeture = false,
+		renouvellement  =  map of (Produit -> nat) {for p ::stock.dom yield pair of (Produit, nat){p,0}}; 
+		
 
-// Puisqu'on passe des paramètres lors de l'initialisation. Il faut s'assurer 
-// qu'ils sont conformes aux invariants. 
+// -----------------------------
+// achatProduitExistant
+//		Pour pouvoir acheter une quantité q d'un produit existant, 
+// 		Il faut s'assurer que le produit est en stock
+// 		il faut s'assurer que  le total de la quantité existante plus celle qu'on achète reste 
+// 		inférieure ou égale à la capacité
+// -----------------------------  
+	schema !achatProduitExistant(p:Produit,q:Quantite)
+		pre 
+		  p in stock.dom,
+		  stock[p]+q <= capacite,
+		  fermeture = false
+		post 
+		   stock! = (stock.remove(p)).append(p -> stock[p]+q),
+		   renouvellement! = (renouvellement.remove(p)).append(p -> renouvellement[p]+q);
 
-build{!stock : map of (Produit -> Quantite), !marcheCible : set of (Produit), !seuil : map of (Produit -> Quantite)}
+// -----------------------------
+// achatNouveauProduit
+// 		Il faut s'assurer que le produit fait partie du marché cible   
+// 		Pour pouvoir acheter une quantité q d'un produit p non existant en stock, 
+// 		Il faut fournir le seuil  minimal  et il faut s'assurer 
+// 		qu'il est inférieur ou égal à la capacité                                                               
+// 		il faut s'assurer que la quantité  qu'on achète est    
+// 		inférieure ou égale à la capacité et supérieure ou égal au seuil 
+// -----------------------------                                              
+	schema !achatNouveauProduit(p:Produit,q:Quantite,s:Quantite)																			   
+		pre 																					
+		  p ~in stock.dom,
+		  p in marcheCible,
+		  q <= capacite, 
+		  s <= capacite,
+		  s <= q,
+		  fermeture = false
+		post
+		   stock! = stock.append(p -> q),
+		   seuil! = seuil.append(p -> s),
+		   renouvellement! = renouvellement.append(p -> 0);
 
-pre
-    stock.dom <<= marcheCible,
-    seuil.dom =  stock.dom,
-    forall p::stock.dom :- stock[p] <= capacite,
-    forall p::seuil.dom :-  seuil[p] <= capacite,
-    forall p::stock.dom :-  seuil[p] <= stock[p]
-     
-
-post
-	produitsPopulaires! = stock.dom,
-	produitsNonPopulaires! = set of (Produit){},
-	satisfaction! = map of (Produit -> Niveau){},
-	fermeture! = false,
-	renouvellement!  =  map of (Produit -> nat) {for p ::stock.dom yield pair of (Produit, nat){p,0}}; 
-
-  
-
-
-
-
-
-schema !achatProduitExistant(p:Produit,q:Quantite)
-
-// Pour pouvoir acheter une quantité q d'un produit existant, 
-// Il faut s'assurer que le produit est en stock
-// il faut s'assurer que  le total de la quantité existante plus celle qu'on achète reste 
-// inférieure ou égale à la capacité
-
-pre 
-  p in stock.dom,
-  stock[p]+q <= capacite,
-  fermeture = false
-
-post 
-   stock! = (stock.remove(p)).append(p -> stock[p]+q),
-   renouvellement! = (renouvellement.remove(p)).append(p -> renouvellement[p]+q);
-
-
-                                                    
-schema !achatNouveauProduit(p:Produit,q:Quantite,s:Quantite)
-
-// Il faut s'assurer que le produit fait partie du marché cible   
-// Pour pouvoir acheter une quantité q d'un produit p non existant en stock, 
-// Il faut fournir le seuil  minimal  et il faut s'assurer 
-// qu'il est inférieur ou égal à la capacité                                                               
-// il faut s'assurer que la quantité  qu'on achète est    
-// inférieure ou égale à la capacité et supérieure ou égal au seuil 
-
-                                                                                          
-pre 
-                                                                                            
-  p ~in stock.dom,
-  p in marcheCible,
-  q <= capacite, 
-  s <= capacite,
-  s <= q,
-  fermeture = false
-
-post
-   stock! = stock.append(p -> q),
-   seuil! = seuil.append(p -> s),
-   renouvellement! = renouvellement.append(p -> 0);
-
-
-
+// -----------------------------
+// produitsPopulaires
+// 		Il faut s'assurer que le produit fait partie du stock  
+// 		Pour pouvoir vendre une quantité q d'un produit p existant en stock, 
+// 		Il faut que q soit inférieure ou égale à la capacité 
+// 		Il faut s'assurer que la quantité qui resterait aprés la vente soit supérieure ou égal au seuil
+// -----------------------------
+	schema !venteProduit(p:Produit,q:Quantite)
+		pre 
+		  p in stock.dom,
+		  q <= capacite,
+		  seuil[p] <= stock[p]-q,
+		  fermeture = false
+		post 
+		   stock! = (stock.remove(p)).append(p -> (stock[p]-q));     
    
-schema !venteProduit(p:Produit,q:Quantite)
+// -----------------------------
+// venteProduitAchat
+// 		Il faut s'assurer que le produit fait partie du stock  
+// 		Pour pouvoir vendre une quantité q  qui fait baisser le stock en deçà du seuil
+// 		Il faut s'assurer que la quantité q vendue soit inférieure ou éagle à capacité moins le seuil minimal
+// 		Il faut commencer par acheter le maximum possible (capacité - stock[p]) puis vendre q. 
+// -----------------------------
+	schema !venteProduitAchat(p:Produit,q:Quantite)
+		pre 
+		  p in stock.dom,
+		  p in produitsPopulaires,
+		  stock[p]-q < seuil[p],
+		  q <= capacite-seuil[p],
+		  fermeture = false
+		post 
+			!achatProduitExistant(p,(capacite-stock[p])) then !venteProduit(p,q)
+			assert
+				stock' = stock;
 
-// Il faut s'assurer que le produit fait partie du stock  
-// Pour pouvoir vendre une quantité q d'un produit p existant en stock, 
-// Il faut que q soit inférieure ou égale à la capacité 
-// Il faut s'assurer que la quantité qui resterait aprés la vente soit supérieure ou égal au seuil                                                         
-
-pre 
-  p in stock.dom,
-  q <= capacite,
-  seuil[p] <= stock[p]-q,
-  fermeture = false
-
-post 
-   stock! = (stock.remove(p)).append(p -> (stock[p]-q));     
-   
-
-
-schema !venteProduitAchat(p:Produit,q:Quantite)
-
-// Il faut s'assurer que le produit fait partie du stock  
-// Pour pouvoir vendre une quantité q  qui fait baisser le stock en deçà du seuil
-// Il faut s'assurer que la quantité q vendue soit inférieure ou éagle à capacité moins le seuil minimal
-// Il faut commencer par acheter le maximum possible (capacité - stock[p]) puis vendre q. 
-
-    
-pre 
-  p in stock.dom,
-  p in produitsPopulaires,
-  stock[p]-q < seuil[p],
-  q <= capacite-seuil[p],
-  fermeture = false
- 
-
-post 
-    !achatProduitExistant(p,(capacite-stock[p])) then !venteProduit(p,q)
-	assert
-		stock' = stock;
-    
-
-    
-schema produitsPopulaires(pp!: set of (Produit),q:Quantite)
- 
-
-// Il faut récupérer les produits dont le renouvellement est supérieur ou égal à q
-pre
-	pp <<= stock.dom
-
-
-post 
-     pp! = (those p::renouvellement.dom :- renouvellement[p] >= q);  
+// -----------------------------
+// produitsPopulaires
+// 		Il faut récupérer les produits dont le renouvellement est supérieur ou égal à q
+// -----------------------------
+	schema produitsPopulaires(pp!: set of (Produit),q:Quantite)
+		pre
+			pp <<= stock.dom
+		post 
+			 pp! = (those p::renouvellement.dom :- renouvellement[p] >= q);  
 	 
-	 
-schema !miseAJourSeuils(p : map of (Produit -> Quantite))
+// -----------------------------
+// miseAJourSeuils
+//		P représente une association entre un produit et sa quantité minimale de stockage
+//		On associe à un produit le seuil fourni (Quantite) ou bien zéro si le produit n'est pas populaire
+//		Et si son niveau de satisfaction est inférieur au seuil de satisfaction
+// -----------------------------
+	//schema !miseAJourSeuils(p : map of (Produit -> Quantite))
+	//	pre
+	//		p.dom <<= stock.dom
+	//	post
+	//		forall produit::stock.dom :-(
+	//			[renouvellement[produit] < renouvellementSeuil & satisfaction[produit] < satisfactionSeuil]
+	//				: stock[produit] = 0),
+	//			[renouvellement[produit] >= renouvellementSeuil]
+	//				: stock[produit] > 0,
+	//			[satisfaction[produit] >= satisfactionSeuil]
+	//				: stock[produit] > 0).
+	//		stock! = stock;
+end;
 
-//P représente une association entre un produit et sa quantité minimale de stockage
-//On associe à un produit le seuil fourni (Quantite) ou bien zéro si le produit n'est pas populaire
-//Et si son niveau de satisfaction est inférieur au seuil de satisfaction
-   
-pre
-	p.dom <<= stock.dom
-	
-post
-	forall produit::stock.dom :-(
-		[renouvellement[produit] < renouvellementSeuil
-		 & satisfaction[produit] < satisfactionSeuil]: stock[produit] = 0,
-		[renouvellement[produit] >= renouvellementSeuil]: stock[produit] > 0,
-		[satisfaction[produit] >= satisfactionSeuil]: stock[produit] > 0),
-	stock! = stock;
-	
-
-     
-end;	
-
-// End
+// End.
