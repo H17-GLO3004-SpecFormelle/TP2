@@ -13,7 +13,7 @@
 
 //-- Types de base (abstraits) -------------------------------------------
 // L'énoncé n'indique aucune information concernant les attributs d'un
-//il est alors normal de les considérer comme des types abstraits "tag".
+// il est alors normal de les considérer comme des types abstraits "tag".
 // Les quantités sont naturellement des entiers naturelles. 
 
 class Produit ^= tag;
@@ -182,7 +182,8 @@ interface
 			produits.dom <<= stock.dom
 		post
 			produitsPopulaires! = (those p::renouvellement.dom :- produits[p] >= renouvellementSeuil),
-			produitsNonPopulaires! = (those p::renouvellement.dom :- produits[p] < renouvellementSeuil);
+			produitsNonPopulaires! = (those p::renouvellement.dom :- produits[p] < renouvellementSeuil),
+			stock! = map of (Produit -> Quantite){those p::stock.pairs :- p.x in produitsPopulaires | p.x in produitsNonPopulaires};
 	 
 // -----------------------------
 // miseAJourSeuils
@@ -196,7 +197,8 @@ interface
 		post
 			forall produit::seuil.dom :- ([satisfaction[produit] >= satisfactionSeuil]: seuil[produit]! = p[produit],
 										  [renouvellement[produit] >= renouvellementSeuil]: seuil[produit]! = p[produit],
-										  []: seuil[produit]! = 0);
+										  []: seuil[produit]! = 0),
+			stock! = map of (Produit -> Quantite){(those paire::stock.pairs :- paire.y > 0)};
 										  
 // -----------------------------
 // miseAJourSatisfactionSondage
@@ -208,6 +210,19 @@ interface
 			p.dom <<= stock.dom
 		post
 			forall produit::satisfaction.dom :- satisfaction[produit]! = p[produit];
+			
+			
+// -----------------------------
+// retirerProduit
+//		P représente le produit à retirer
+// -----------------------------
+	schema !retirerProduit(p : Produit)
+		pre
+			p in marcheCible,
+			p ~in stock.dom,
+			#marcheCible > 1
+		post
+			marcheCible! = marcheCible.remove(p);
 end;
 
 // End.
