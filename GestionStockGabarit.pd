@@ -197,6 +197,17 @@ interface
 			forall produit::seuil.dom :- ([satisfaction[produit] >= satisfactionSeuil]: seuil[produit]! = p[produit],
 										  [renouvellement[produit] >= renouvellementSeuil]: seuil[produit]! = p[produit],
 										  []: seuil[produit]! = 0);
+										  
+// -----------------------------
+// miseAJourSatisfactionSondage
+//		P représente une association entre un produit et son niveau de satisfaction
+//		On associe à un produit la satisfaction fournie (Niveau) en lien avec le paramètre d'entrée
+// -----------------------------
+	schema !miseAJourSatisfactionSondage(p : map of (Produit -> Niveau))
+		pre
+			p.dom <<= stock.dom
+		post
+			forall produit::satisfaction.dom :- satisfaction[produit]! = p[produit];
 end;
 
 // End.
