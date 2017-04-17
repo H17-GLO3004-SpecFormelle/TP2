@@ -84,6 +84,7 @@ interface
 		// Les produits en stock doivent faire partie de la ligne de produits
 		stock.dom <<= marcheCible,
 		seuil.dom = stock.dom,
+		satisfaction.dom = stock.dom,
 		// La quantite d’un produit en stock ne doit pas exceder capacite
 		forall p::stock.dom :- stock[p] <= capacite,
 		// Le seuil d’un produit en stock ne doit pas exceder capacite
@@ -94,7 +95,7 @@ interface
 		produitsPopulaires = stock.dom,
 		produitsNonPopulaires = set of (Produit){},
 		renouvellement = map of (Produit -> nat) {for p ::stock.dom yield pair of (Produit, nat){p,0}},
-		satisfaction = map of (Produit -> Niveau){},
+		satisfaction = map of (Produit -> Niveau){for p::stock.dom yield pair of (Produit, nat){p,satisfactionSeuil}},
 		fermeture = false;
 
 // -----------------------------
