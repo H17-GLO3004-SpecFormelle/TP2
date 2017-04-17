@@ -129,11 +129,11 @@ interface
 		pre
 		  p in marcheCible,																				
 		  p ~in stock.dom,
+		  p ~in satisfaction.dom,
 		  q <= capacite,
 		  s <= capacite,
 		  s <= q,
-		  n > satisfactionSeuil,
-		  n <= satisfactionMax,
+		  satisfactionSeuil < n <= satisfactionMax,
 		  fermeture = false
 		post
 		   stock! = stock.append(p -> q),
