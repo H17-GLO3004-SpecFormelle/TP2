@@ -245,13 +245,13 @@ interface
 // en stock et il faut laisser au moins un produit dans le marche cible.
 //		P représente le produit à retirer
 // -----------------------------
-	schema !retirerProduit(p : Produit)
+	schema !retirerProduit(produit: Produit)
 		pre
-			p in marcheCible,
-			p ~in stock.dom,
+			produit in marcheCible,
+			produit ~in stock.dom,
 			#marcheCible > 1
 		post
-			marcheCible! = marcheCible.remove(p);
+			marcheCible! = marcheCible.remove(produit);
 end;
 
 // End.
