@@ -218,7 +218,9 @@ interface
 			forall produit::seuil.dom :- ([satisfaction[produit] >= satisfactionSeuil]: seuil[produit]! = p[produit],
 										  [renouvellement[produit] >= renouvellementSeuil]: seuil[produit]! = p[produit],
 										  []: seuil[produit]! = 0),
-			stock! = map of (Produit -> Quantite){(those paire::stock.pairs :- paire.y > 0)};
+			stock! = map of (Produit -> Quantite){(those paire::stock.pairs :- paire.y > 0)},
+			fermeture! = ~(#(stock.dom) > 0);
+			
 										  
 // -----------------------------
 // 7.
