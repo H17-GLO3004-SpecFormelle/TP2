@@ -232,12 +232,11 @@ interface
 //		P représente une association entre un produit et son niveau de satisfaction
 //		On associe à un produit la satisfaction fournie (Niveau) en lien avec le paramètre d'entrée
 // -----------------------------
-	schema !miseAJourSatisfactionSondage(p : map of (Produit -> Niveau))
+	schema !miseAJourSatisfactionSondage(produits: map of (Produit -> Niveau))
 		pre
-			p.dom <<= stock.dom
+			produits.dom <<= satisfaction.dom
 		post
-			forall produit::satisfaction.dom :- satisfaction[produit]! = p[produit];
-			
+			forall p::produits.dom :- satisfaction[p]! = produits[p];
 			
 // -----------------------------
 // 8.
