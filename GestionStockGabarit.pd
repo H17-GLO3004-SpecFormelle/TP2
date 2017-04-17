@@ -83,7 +83,6 @@ interface
 		#marcheCible > 0,
 		// Les produits en stock doivent faire partie de la ligne de produits
 		stock.dom <<= marcheCible,
-		seuil.dom = stock.dom,
 		// La quantite d’un produit en stock ne doit pas exceder capacite
 		forall p::stock.dom :- stock[p] <= capacite,
 		// Le seuil d’un produit en stock ne doit pas exceder capacite
@@ -91,6 +90,7 @@ interface
 		// La quantite d’un produit en stock doit etre au moins egale au seuil associe a ce produit
 		forall p::stock.dom :- seuil[p] <= stock[p],
 		
+		seuil.dom = stock.dom,
 		produitsPopulaires = stock.dom,
 		produitsNonPopulaires = set of (Produit){},
 		renouvellement = map of (Produit -> nat) {for p ::stock.dom yield pair of (Produit, nat){p,0}},
@@ -204,6 +204,9 @@ interface
 // -----------------------------
 // 6.
 // miseAJourSeuils
+// Mise a jour des seuils, on fournit une association produit quantite minimale de stockage.
+// On associe a un produit le seuil fourni ou bien zero s’il n’est pas populaire et si son niveau
+// de satisfaction est plus bas que le seuil de satisfaction.
 //		P représente une association entre un produit et sa quantité minimale de stockage
 //		On associe à un produit le seuil fourni (Quantite) ou bien zéro si le produit n'est pas populaire
 //		Et si son niveau de satisfaction est inférieur au seuil de satisfaction
@@ -233,6 +236,8 @@ interface
 // -----------------------------
 // 8.
 // retirerProduit
+// Le gerant peut decider de retirer un produit du marche cible. Il ne faut pas que ce produit soit 
+// en stock et il faut laisser au moins un produit dans le marche cible.
 //		P représente le produit à retirer
 // -----------------------------
 	schema !retirerProduit(p : Produit)
