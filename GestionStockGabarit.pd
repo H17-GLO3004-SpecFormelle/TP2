@@ -83,14 +83,14 @@ interface
 		#marcheCible > 0,
 		// Les produits en stock doivent faire partie de la ligne de produits
 		stock.dom <<= marcheCible,
+		seuil.dom = stock.dom,
 		// La quantite d’un produit en stock ne doit pas exceder capacite
 		forall p::stock.dom :- stock[p] <= capacite,
 		// Le seuil d’un produit en stock ne doit pas exceder capacite
 		forall p::seuil.dom :- seuil[p] <= capacite,
 		// La quantite d’un produit en stock doit etre au moins egale au seuil associe a ce produit
-		forall p::stock.dom :- seuil[p] <= stock[p],
+		forall p::stock.dom :- stock[p] >= seuil[p],
 		
-		seuil.dom = stock.dom,
 		produitsPopulaires = stock.dom,
 		produitsNonPopulaires = set of (Produit){},
 		renouvellement = map of (Produit -> nat) {for p ::stock.dom yield pair of (Produit, nat){p,0}},
