@@ -4,12 +4,12 @@
 //* Created: 09:40:25 on Friday October 8th 2010 UTC
 //*******************************************************
 //////////////////////////////////////////////////////////////////////////
-//  Gabarit - GLO-3004, spécification formelle et vérification, 
+//  TP2 - GLO-3004, Spécification formelle et vérification de logiciels, 
 //////////////////////////////////////////////////////////////////////////
 
 // Mathieu BOILY - 111 127 896
-// Marc-Antoire FORTIER - 111 130 529
-// Maxime LAVEGNE - 111 110 783
+// Marc-Antoine FORTIER - 111 130 526
+// Maxime LAVERGNE - 111 110 783
 
 //-- Types de base (abstraits) -------------------------------------------
 // L'énoncé n'indique aucune information concernant les attributs d'un
@@ -41,14 +41,14 @@ abstract
 		stock          : map of (Produit  -> Quantite),
 		// Le marcheCible est un ensemble de produits.
 		marcheCible    : set of (Produit),
-		// Les seuils sont fournis comme une association (produit,seuil)
-		seuil          : map of (Produit -> Quantite),
-		//
-		renouvellement : map of (Produit -> nat),
-		// Ensemble des produits si son renouvellement excede ou egal a renouvellementSeuil
+		// Ensemble des produits si son renouvellement excede ou egale a renouvellementSeuil
 		produitsPopulaires 			: set of (Produit),
 		// Ensemble des produits si son renouvellement est sous renouvelleSeuil
 		produitsNonPopulaires		: set of (Produit),
+		// Les seuils sont fournis comme une association (produit,seuil)
+		seuil          : map of (Produit -> Quantite),
+		// Le renouvellement est un registre dans lequel on recense les quantites achetees de chacun des produits
+		renouvellement : map of (Produit -> nat),
 		// Associe chaque produit a un niveaeu de satisfaction
 		satisfaction				: map of (Produit -> Niveau), 
 		// true si la ligne de produits va etre fermee par le gestionnaire
@@ -66,34 +66,42 @@ abstract
 		forall p::seuil.dom :-  seuil[p] <= capacite,
 		// La quantité en stock de chaque produit doit être supérieur ou égal au seuil minimal associé au produit et inférieure ou égal à la capacité.
 		forall p::stock.dom :- seuil[p] <= stock[p];
+
 interface
 	// Puisqu'on passe des paramètres lors de l'initialisation. Il faut s'assurer qu'ils sont conformes aux invariants. 
 	build{	!stock 					: map of (Produit -> Quantite), 
 			!marcheCible 			: set of (Produit), 
-			!seuil 					: map of (Produit -> Quantite),
-			!renouvellement			: map of (Produit -> Quantite),
 			!produitsPopulaires 	: set of (Produit),
 			!produitsNonPopulaires 	: set of (Produit), 
+			!seuil 					: map of (Produit -> Quantite),
+			!renouvellement			: map of (Produit -> Quantite),
 			!satisfaction 			: map of (Produit -> Niveau), 
 			!fermeture 				: bool}
 	pre
+		// On ne fonctionne pas avec une ligne de produits vide
+		#marcheCible > 0,
+		// Les produits en stock doivent faire partie de la ligne de produits
 		stock.dom <<= marcheCible,
-		seuil.dom =  stock.dom,
+		seuil.dom = stock.dom,
+		// La quantite d’un produit en stock ne doit pas exceder capacite
 		forall p::stock.dom :- stock[p] <= capacite,
-		forall p::seuil.dom :-  seuil[p] <= capacite,
-		forall p::stock.dom :-  seuil[p] <= stock[p],
+		// Le seuil d’un produit en stock ne doit pas exceder capacite
+		forall p::seuil.dom :- seuil[p] <= capacite,
+		// La quantite d’un produit en stock doit etre au moins egale au seuil associe a ce produit
+		forall p::stock.dom :- seuil[p] <= stock[p],
 		
 		produitsPopulaires = stock.dom,
 		produitsNonPopulaires = set of (Produit){},
+		renouvellement = map of (Produit -> nat) {for p ::stock.dom yield pair of (Produit, nat){p,0}},
 		satisfaction = map of (Produit -> Niveau){},
-		fermeture = false,
-		renouvellement  =  map of (Produit -> nat) {for p ::stock.dom yield pair of (Produit, nat){p,0}}; 
+		fermeture = false;
 
 // -----------------------------
+// 1.
 // achatProduitExistant
 //		Pour pouvoir acheter une quantité q d'un produit existant, 
 // 		Il faut s'assurer que le produit est en stock
-// 		il faut s'assurer que  le total de la quantité existante plus celle qu'on achète reste 
+// 		Il faut s'assurer que le total de la quantité existante plus celle qu'on achète reste 
 // 		inférieure ou égale à la capacité
 // -----------------------------  
 	schema !achatProduitExistant(p:Produit,q:Quantite)
@@ -106,6 +114,7 @@ interface
 		   renouvellement! = (renouvellement.remove(p)).append(p -> renouvellement[p]+q);
 
 // -----------------------------
+// 2.
 // achatNouveauProduit
 // 		Il faut s'assurer que le produit fait partie du marché cible   
 // 		Pour pouvoir acheter une quantité q d'un produit p non existant en stock, 
@@ -128,7 +137,8 @@ interface
 		   renouvellement! = renouvellement.append(p -> 0);
 
 // -----------------------------
-// produitsPopulaires
+// 3.
+// venteProduit
 // 		Il faut s'assurer que le produit fait partie du stock  
 // 		Pour pouvoir vendre une quantité q d'un produit p existant en stock, 
 // 		Il faut que q soit inférieure ou égale à la capacité 
@@ -144,6 +154,7 @@ interface
 		   stock! = (stock.remove(p)).append(p -> (stock[p]-q));     
    
 // -----------------------------
+// 4.
 // venteProduitAchat
 // 		Il faut s'assurer que le produit fait partie du stock  
 // 		Pour pouvoir vendre une quantité q  qui fait baisser le stock en deçà du seuil
@@ -173,6 +184,7 @@ interface
 			 pp! = (those p::renouvellement.dom :- renouvellement[p] >= q);  
 	 
 // -----------------------------
+// 5.
 // miseAJourRenouvellement
 // 		Mise a jour de la popularite des produits selon le renouvellement.
 // -----------------------------
@@ -186,6 +198,7 @@ interface
 			stock! = map of (Produit -> Quantite){those p::stock.pairs :- p.x in produitsPopulaires | p.x in produitsNonPopulaires};
 	 
 // -----------------------------
+// 6.
 // miseAJourSeuils
 //		P représente une association entre un produit et sa quantité minimale de stockage
 //		On associe à un produit le seuil fourni (Quantite) ou bien zéro si le produit n'est pas populaire
@@ -201,6 +214,7 @@ interface
 			stock! = map of (Produit -> Quantite){(those paire::stock.pairs :- paire.y > 0)};
 										  
 // -----------------------------
+// 7.
 // miseAJourSatisfactionSondage
 //		P représente une association entre un produit et son niveau de satisfaction
 //		On associe à un produit la satisfaction fournie (Niveau) en lien avec le paramètre d'entrée
@@ -213,6 +227,7 @@ interface
 			
 			
 // -----------------------------
+// 8.
 // retirerProduit
 //		P représente le produit à retirer
 // -----------------------------
