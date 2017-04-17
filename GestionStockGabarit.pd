@@ -26,6 +26,7 @@ class Niveau ^= nat;   // entre 1 et 10.
 const 
 	capacite : nat ^= 1000,	// Capacité maximal d'un produit
 	satisfactionSeuil : nat ^= 6, 	// Niveau de satifaction minimal
+	satisfactionMax : nat ^= 10, 	// Niveau de satifaction maximal
 	renouvellementSeuil : nat ^= 50;	// En dessous de ce seuil, la quantité est considérée comme faible
 
 //------------------------------------------------------------------------
@@ -118,24 +119,27 @@ interface
 // achatNouveauProduit
 // 		Il faut s'assurer que le produit fait partie du marché cible   
 // 		Pour pouvoir acheter une quantité q d'un produit p non existant en stock, 
-// 		Il faut fournir le seuil  minimal  et il faut s'assurer 
+// 		Il faut fournir le seuil  minimal et il faut s'assurer 
 // 		qu'il est inférieur ou égal à la capacité                                                               
-// 		il faut s'assurer que la quantité  qu'on achète est    
+// 		Il faut s'assurer que la quantité  qu'on achète est    
 // 		inférieure ou égale à la capacité et supérieure ou égal au seuil 
 // -----------------------------                                              
-	schema !achatNouveauProduit(p:Produit,q:Quantite,s:Quantite)																			   
-		pre 																					
+	schema !achatNouveauProduit(p:Produit,q:Quantite,s:Quantite,n:Niveau)																			   
+		pre
+		  p in marcheCible,																				
 		  p ~in stock.dom,
-		  p in marcheCible,
-		  q <= capacite, 
+		  q <= capacite,
 		  s <= capacite,
 		  s <= q,
+		  n > satisfactionSeuil,
+		  n <= satisfactionMax,
 		  fermeture = false
 		post
 		   stock! = stock.append(p -> q),
 		   seuil! = seuil.append(p -> s),
+		   satisfaction! = satisfaction.append(p -> n),
 		   renouvellement! = renouvellement.append(p -> 0);
-
+ 
 // -----------------------------
 // 3.
 // venteProduit
