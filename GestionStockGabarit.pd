@@ -193,14 +193,17 @@ interface
 // miseAJourRenouvellement
 // 		Mise a jour de la popularite des produits selon le renouvellement.
 // -----------------------------
-	 schema !miseAJourRenouvellement(produits!: map of (Produit -> Quantite))
+	 schema !miseAJourRenouvellement(produits: map of (Produit -> Quantite))
 		pre
 			renouvellement.dom <<= produits.dom,
 			produits.dom <<= stock.dom
 		post
 			produitsPopulaires! = (those p::renouvellement.dom :- produits[p] >= renouvellementSeuil),
 			produitsNonPopulaires! = (those p::renouvellement.dom :- produits[p] < renouvellementSeuil),
-			stock! = map of (Produit -> Quantite){those p::stock.pairs :- p.x in produitsPopulaires | p.x in produitsNonPopulaires};
+			stock! = map of (Produit -> Quantite){those p::stock.pairs :- p.x in produitsPopulaires | p.x in produitsNonPopulaires},
+			seuil! = seuil**(stock'.dom),
+			renouvellement! = renouvellement**(stock'.dom),
+			satisfaction! = satisfaction**(stock'.dom);
 	 
 // -----------------------------
 // 6.
