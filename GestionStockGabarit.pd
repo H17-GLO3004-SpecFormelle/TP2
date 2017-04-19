@@ -97,6 +97,7 @@ interface
 		
 		produitsPopulaires = stock.dom,
 		produitsNonPopulaires = set of (Produit){},
+		seuil = map of (Produit -> nat) {for p::stock.dom yield pair of (Produit, nat){p,renouvellementSeuil}},
 		renouvellement = map of (Produit -> nat) {for p ::stock.dom yield pair of (Produit, nat){p,0}},
 		satisfaction = map of (Produit -> Niveau){for p::stock.dom yield pair of (Produit, nat){p,satisfactionSeuil}},
 		fermeture = false;
