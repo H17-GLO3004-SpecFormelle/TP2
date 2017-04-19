@@ -16,56 +16,57 @@
 // il est alors normal de les considérer comme des types abstraits "tag".
 // Les quantités sont naturellement des entiers naturelles. 
 
-class Produit ^= tag;
-class Quantite ^= nat;
-class Niveau ^= nat;   // entre 1 et 10.
+class Produit ^= tag;  // Type abstrait. Représente un produit entreposé dans les stocks
+class Quantite ^= nat; // Entier naturel devant être inférieur ou égal à la constante "capacite"
+class Niveau ^= nat;   // Entier naturel pouvant varier entre 1 et 10 inclusivement.
 
 // 
 //-- Constantes ----------------------------------------------------------
 //  La capacité de stockage est une constante liée aux installations de l'entreprise. 
 const 
-	capacite : nat ^= 1000,	// Capacité maximal d'un produit
-	satisfactionSeuil : nat ^= 6, 	// Niveau de satifaction minimal
-	satisfactionMax : nat ^= 10, 	// Niveau de satifaction maximal
-	renouvellementSeuil : nat ^= 50;	// En dessous de ce seuil, la quantité est considérée comme faible
+	capacite : nat ^= 1000,				// Entier naturel représentant le nombre maximal d'exemplaires d'un produit en stock.
+	satisfactionSeuil : nat ^= 6, 		// Entier naturel représentant le niveau de satifaction minimal pour que le produit soit considéré populaire.
+	satisfactionMax : nat ^= 10, 		// Entier naturel représentant le niveau de satifaction maximal que peut prendre un produit.
+	renouvellementSeuil : nat ^= 50;	// Entier naturel. En dessous de ce seuil, la quantité est considérée comme faible.
 
 //------------------------------------------------------------------------
 // CLASSE GestionStock
 //------------------------------------------------------------------------
 // L'énoncé indique clairement plusieurs attributs et propriétés relatifs
 // à la gestion de stock, il est donc normal d'y associer une classe.	
+// La classe peut être vue comme un entrepôt qui gère la distribution de produits à une clientèle cible.
 //--------------------------------------------------------------------------
 class GestionStock ^= 
 abstract 
 	var 
-		// Le stock est une association (produit, quantite)
+		// Le stock est une association prenant un produit en paramètre et en retourne la quantité disponible.
 		stock          			: map of (Produit  -> Quantite),
-		// Le marcheCible est un ensemble de produits.
+		// Le marcheCible est un ensemble de produits qui satisfont la clientèle cible.
 		marcheCible    			: set of (Produit),
-		// Ensemble des produits si son renouvellement excede ou egale a renouvellementSeuil
+		// Ensemble des produits dont leur renouvellement excède ou égale a renouvellementSeuil.
 		produitsPopulaires 		: set of (Produit),
-		// Ensemble des produits si son renouvellement est sous renouvelleSeuil
+		// Ensemble des produits dont leur renouvellement est inférieur à renouvellementSeuil.
 		produitsNonPopulaires	: set of (Produit),
-		// Les seuils sont fournis comme une association (produit,seuil)
+		// Les seuils sont fournis comme une association prenant en paramètre un produit et qui retourne la quantité minimale sous lequel on doit renouveller sa quantité
 		seuil          			: map of (Produit -> Quantite),
-		// Le renouvellement est un registre dans lequel on recense les quantites achetees de chacun des produits
+		// Le renouvellement est un registre dans lequel on recense les quantités achetées de chacun des produits. Il s'agit d'une association d'un produit vers un naturel.
 		renouvellement 			: map of (Produit -> nat),
-		// Associe chaque produit a un niveaeu de satisfaction
+		// Association prenant en paramètre un produit et qui retourne le niveau de satisfaction de celui-ci.
 		satisfaction			: map of (Produit -> Niveau), 
-		// true si la ligne de produits va etre fermee par le gestionnaire
+		// Variable booléenne qui indique si la ligne de produits va être fermée par le gestionnaire ou non.
 		fermeture				: bool;
 	invariant
 		// Les produits en stock doivent faire partie du marche cibe. 
 		stock.dom <<= marcheCible, 
-		// Le domaine de seuil est le mêm1e que le domaine de stock, à chaque produit en stock on associe un seuil. 
+		// Le domaine de seuil est le même que le domaine de stock, à chaque produit en stock on associe un seuil. 
 		seuil.dom = stock.dom,
 		// Un renouvellement est associé à chacun des produits en stock.
 		renouvellement.dom = stock.dom,
 		// Une satisfaction est associée à chacun des produits en stock.
 		satisfaction.dom = stock.dom,
-		// La quantite d’un produit en stock ne doit pas exceder capacite
+		// La quantité d’un produit en stock ne doit pas excéder la capacité.
 		forall p::stock.dom :- stock[p] <= capacite,
-		// Le seuil d’un produit en stock ne doit pas exceder capacite
+		// Le seuil d’un produit en stock ne doit pas excéder capacite
 		forall p::seuil.dom :- seuil[p] <= capacite,
 		// La quantité en stock de chaque produit doit être au moins égale au seuil associé a ce produit
 		forall p::stock.dom :- seuil[p] <= stock[p];
@@ -88,18 +89,24 @@ interface
 		seuil.dom = stock.dom,
 		renouvellement.dom = stock.dom,
 		satisfaction.dom = stock.dom,
-		// La quantite d’un produit en stock ne doit pas exceder capacite
+		// La quantité d'exmeplaires d’un produit en stock ne doit pas excéder la capacité maximale
 		forall p::stock.dom :- stock[p] <= capacite,
-		// Le seuil d’un produit en stock ne doit pas exceder capacite
+		// Le seuil d’un produit en stock ne doit pas excéder la capacité maximale
 		forall p::seuil.dom :- seuil[p] <= capacite,
-		// La quantite d’un produit en stock doit etre au moins egale au seuil associe a ce produit
+		// La quantité d'exemplaires d’un produit en stock doit être au moins égale au seuil associé à ce produit
 		forall p::stock.dom :- stock[p] >= seuil[p],
 		
+		// Au départ, tous les produits sont considérés populaires par le gestionnaire
 		produitsPopulaires = stock.dom,
+		// Donc l'ensemble des produits non populaires doit être vide
 		produitsNonPopulaires = set of (Produit){},
+		// Initialisation du seuil de chaque produit
 		seuil = map of (Produit -> nat) {for p::stock.dom yield pair of (Produit, nat){p,renouvellementSeuil}},
+		// Initialisation de l'indice de renouvellement de chaque produit
 		renouvellement = map of (Produit -> nat) {for p::stock.dom yield pair of (Produit, nat){p,0}},
+		// Initialisation du niveau de satisfaction de chaque produit
 		satisfaction = map of (Produit -> Niveau){for p::stock.dom yield pair of (Produit, nat){p,satisfactionSeuil}},
+		// Au départ, la ligne de produit n'est pas en fermeture
 		fermeture = false;
 
 // -----------------------------
@@ -160,9 +167,16 @@ interface
 		  seuil[p] <= stock[p]-q,
 		  fermeture = false
 		post 
-		   stock! = (stock.remove(p)).append(p -> (stock[p]-q));
-		   //stock! = map of (Produit -> Quantite){ (those paire::seuil'.pairs :- paire.y > 0) },
-		   //fermeture! = (#(stock'.dom) = 0);
+		   stock! = (
+				[(stock[p]-q)=0]:
+					stock.remove(p),
+				[]:
+					(stock.remove(p)).append(p -> (stock[p]-q))
+			),
+		   fermeture! = (#(stock'.dom) = 0),
+		   seuil! = seuil**(stock'.dom),
+		   renouvellement! = renouvellement**(stock'.dom),
+		   satisfaction! = satisfaction**(stock'.dom);
    
 // -----------------------------
 // 4.
