@@ -58,14 +58,16 @@ abstract
 		// Les produits en stock doivent faire partie du marche cibe. 
 		stock.dom <<= marcheCible, 
 		// Le domaine de seuil est le même que le domaine de stock, à chaque produit en stock on associe un seuil. 
-		seuil.dom =  stock.dom,
+		seuil.dom = stock.dom,
 		// Un renouvellement est associé à chacun des produits en stock.
 		renouvellement.dom = stock.dom,
-		// La quantité de chacun des produits ne doit pas dépasser la capacité de stockage fixée d'avance
+		// Une satisfaction est associée à chacun des produits en stock.
+		satisfaction.dom = stock.dom,
+		// La quantite d’un produit en stock ne doit pas exceder capacite
 		forall p::stock.dom :- stock[p] <= capacite,
-		// Les seuils ne doivent pas être plus élevés que la capacité de stockage (déduction logique!)
-		forall p::seuil.dom :-  seuil[p] <= capacite,
-		// La quantité en stock de chaque produit doit être supérieur ou égal au seuil minimal associé au produit et inférieure ou égal à la capacité.
+		// Le seuil d’un produit en stock ne doit pas exceder capacite
+		forall p::seuil.dom :- seuil[p] <= capacite,
+		// La quantité en stock de chaque produit doit être au moins égale au seuil associé a ce produit
 		forall p::stock.dom :- seuil[p] <= stock[p];
 
 interface
@@ -84,6 +86,7 @@ interface
 		// Les produits en stock doivent faire partie de la ligne de produits
 		stock.dom <<= marcheCible,
 		seuil.dom = stock.dom,
+		renouvellement.dom = stock.dom,
 		satisfaction.dom = stock.dom,
 		// La quantite d’un produit en stock ne doit pas exceder capacite
 		forall p::stock.dom :- stock[p] <= capacite,
