@@ -30,34 +30,34 @@ const
 	renouvellementSeuil : nat ^= 50;	// En dessous de ce seuil, la quantité est considérée comme faible
 
 //------------------------------------------------------------------------
-// CLASSE Gestiontock
+// CLASSE GestionStock
 //------------------------------------------------------------------------
 // L'énoncé indique clairement plusieurs attributs et propriétés relatifs
-// à la gestion de  stock, il est donc normal d'y associer une classe.	
+// à la gestion de stock, il est donc normal d'y associer une classe.	
 //--------------------------------------------------------------------------
 class GestionStock ^= 
 abstract 
 	var 
 		// Le stock est une association (produit, quantite)
-		stock          : map of (Produit  -> Quantite),
+		stock          			: map of (Produit  -> Quantite),
 		// Le marcheCible est un ensemble de produits.
-		marcheCible    : set of (Produit),
+		marcheCible    			: set of (Produit),
 		// Ensemble des produits si son renouvellement excede ou egale a renouvellementSeuil
-		produitsPopulaires 			: set of (Produit),
+		produitsPopulaires 		: set of (Produit),
 		// Ensemble des produits si son renouvellement est sous renouvelleSeuil
-		produitsNonPopulaires		: set of (Produit),
+		produitsNonPopulaires	: set of (Produit),
 		// Les seuils sont fournis comme une association (produit,seuil)
-		seuil          : map of (Produit -> Quantite),
+		seuil          			: map of (Produit -> Quantite),
 		// Le renouvellement est un registre dans lequel on recense les quantites achetees de chacun des produits
-		renouvellement : map of (Produit -> nat),
+		renouvellement 			: map of (Produit -> nat),
 		// Associe chaque produit a un niveaeu de satisfaction
-		satisfaction				: map of (Produit -> Niveau), 
+		satisfaction			: map of (Produit -> Niveau), 
 		// true si la ligne de produits va etre fermee par le gestionnaire
-		fermeture					: bool;
+		fermeture				: bool;
 	invariant
 		// Les produits en stock doivent faire partie du marche cibe. 
 		stock.dom <<= marcheCible, 
-		// Le domaine de seuil est le même que le domaine de stock, à chaque produit en stock on associe un seuil. 
+		// Le domaine de seuil est le mêm1e que le domaine de stock, à chaque produit en stock on associe un seuil. 
 		seuil.dom = stock.dom,
 		// Un renouvellement est associé à chacun des produits en stock.
 		renouvellement.dom = stock.dom,
@@ -98,7 +98,7 @@ interface
 		produitsPopulaires = stock.dom,
 		produitsNonPopulaires = set of (Produit){},
 		seuil = map of (Produit -> nat) {for p::stock.dom yield pair of (Produit, nat){p,renouvellementSeuil}},
-		renouvellement = map of (Produit -> nat) {for p ::stock.dom yield pair of (Produit, nat){p,0}},
+		renouvellement = map of (Produit -> nat) {for p::stock.dom yield pair of (Produit, nat){p,0}},
 		satisfaction = map of (Produit -> Niveau){for p::stock.dom yield pair of (Produit, nat){p,satisfactionSeuil}},
 		fermeture = false;
 
@@ -220,7 +220,7 @@ interface
 	schema !miseAJourSeuils(produits: map of (Produit -> Quantite))
 		pre
 			produits.dom <<= seuil.dom,
-			forall p::produits.dom :- produits[p] <= stock[p]
+			forall p::produits.dom :- produits[p] <= stock[p] <= capacite
 		post
 
 			forall p::produits.dom :- (
