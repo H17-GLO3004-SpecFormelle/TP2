@@ -174,9 +174,7 @@ interface
 		  q <= capacite-seuil[p],
 		  fermeture = false
 		post 
-			!achatProduitExistant(p,(capacite-stock[p])) then !venteProduit(p,q)
-			assert
-				stock' = stock;
+			!achatProduitExistant(p,(capacite-stock[p])) then !venteProduit(p,q);
 
 // -----------------------------
 // produitsPopulaires
