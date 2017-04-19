@@ -160,7 +160,9 @@ interface
 		  seuil[p] <= stock[p]-q,
 		  fermeture = false
 		post 
-		   stock! = (stock.remove(p)).append(p -> (stock[p]-q));     
+		   stock! = (stock.remove(p)).append(p -> (stock[p]-q));
+		   //stock! = map of (Produit -> Quantite){ (those paire::seuil'.pairs :- paire.y > 0) },
+		   //fermeture! = (#(stock'.dom) = 0);
    
 // -----------------------------
 // 4.
@@ -222,15 +224,12 @@ interface
 			produits.dom <<= seuil.dom,
 			forall p::produits.dom :- produits[p] <= stock[p] <= capacite
 		post
-
 			forall p::produits.dom :- (
 				[satisfaction[p] >= satisfactionSeuil | renouvellement[p] >= renouvellementSeuil]:
 					seuil[p]! = produits[p],
 				[]:
 					seuil[p]! = 0
-			),
-			//stock! = map of (Produit -> Quantite){ (those paire::seuil'.pairs :- paire.y > 0) },
-			fermeture! = (#(stock'.dom) = 0);
+			);
 			
 										  
 // -----------------------------
